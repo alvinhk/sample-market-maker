@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from time import sleep
+from time import sleep, time
 import sys
 from datetime import datetime
 from os.path import getmtime
@@ -161,10 +161,20 @@ class ExchangeInterface:
             symbol = self.symbol
         return self.bitmex.position(symbol)
 
-    def get_ticker(self, symbol=None):
+    def get_ticker(self, symbol: object = None) -> object:
         if symbol is None:
             symbol = self.symbol
         return self.bitmex.ticker_data(symbol)
+
+    def get_orderBookL2(self):
+        return self.bitmex.orderBookL2()
+
+    def get_orderBook10(self):
+        return self.bitmex.orderBook10()
+
+    def get_trade(self):
+        return self.bitmex.trade()
+
 
     def is_open(self):
         """Check that websockets are still open."""
@@ -196,6 +206,36 @@ class ExchangeInterface:
         if self.dry_run:
             return orders
         return self.bitmex.cancel([order['orderID'] for order in orders])
+
+class MarketDataCollector:
+    def __init__(self):
+        logger.info("init MarketDataCollector")
+        self.exchange = ExchangeInterface(settings.DRY_RUN)
+        self.instrument = self.exchange.get_instrument()
+
+    def start_collect(self):
+        logger.info("startCollect")
+        start_time = time()
+        elapsed_time = 0
+        trade = self.exchange.get_trade()
+        order_book_10 = self.exchange.get_orderBook10()
+        current_trade_len = len(trade)
+        current_order_book_timestamp = order_book_10[0]['timestamp']
+        logger.info("Init trade %s", trade[0:])
+        logger.info("Init order book bid %s", order_book_10[0]['bids'])
+        logger.info("Init order book ask %s", order_book_10[0]['asks'])
+        while elapsed_time < 3600:
+            elapsed_time = time() - start_time
+            sleep(1)
+            logger.info("trade captured %s", current_trade_len)
+            logger.info("order book captured timestamp %s", current_order_book_timestamp)
+            if current_order_book_timestamp != order_book_10[0]['timestamp']:
+                current_order_book_timestamp = order_book_10[0]['timestamp']
+                logger.info("New order book bid %s", order_book_10[0]['bids'])
+                logger.info("New order book ask %s", order_book_10[0]['asks'])
+            if current_trade_len != len(trade):
+                logger.info("New trade %s", trade[current_trade_len:])
+                current_trade_len = len(trade)
 
 
 class OrderManager:
@@ -540,9 +580,9 @@ def margin(instrument, quantity, price):
 def run():
     logger.info('BitMEX Market Maker Version: %s\n' % constants.VERSION)
 
-    om = OrderManager()
+    collector = MarketDataCollector()
     # Try/except just keeps ctrl-c from printing an ugly stacktrace
     try:
-        om.run_loop()
+        collector.start_collect()
     except (KeyboardInterrupt, SystemExit):
         sys.exit()

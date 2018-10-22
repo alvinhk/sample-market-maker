@@ -63,6 +63,15 @@ class BitMEX(object):
             symbol = self.symbol
         return self.ws.get_ticker(symbol)
 
+    def orderBookL2(self):
+        return self.ws.get_orderBookL2()
+
+    def orderBook10(self):
+        return self.ws.get_orderBook10()
+
+    def trade(self):
+        return self.ws.get_trade()
+
     def instrument(self, symbol):
         """Get an instrument's details."""
         return self.ws.get_instrument(symbol)

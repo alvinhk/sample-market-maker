@@ -46,7 +46,7 @@ class BitMEXWebsocket():
 
         # We can subscribe right in the connection querystring, so let's build that.
         # Subscribe to all pertinent endpoints
-        subscriptions = [sub + ':' + symbol for sub in ["quote", "trade"]]
+        subscriptions = [sub + ':' + symbol for sub in ["quote", "trade", "orderBookL2", "orderBook10"]]
         subscriptions += ["instrument"]  # We want all of them
         if self.shouldAuth:
             subscriptions += [sub + ':' + symbol for sub in ["order", "execution"]]
@@ -81,6 +81,15 @@ class BitMEXWebsocket():
         instrument['tickLog'] = decimal.Decimal(str(instrument['tickSize'])).as_tuple().exponent * -1
         return instrument
 
+    def get_orderBookL2(self):
+        return self.data['orderBookL2']
+
+    def get_orderBook10(self):
+        return self.data['orderBook10']
+
+    def get_trade(self):
+        return self.data['trade']
+
     def get_ticker(self, symbol):
         '''Return a ticker object. Generated from instrument.'''
 
@@ -108,8 +117,8 @@ class BitMEXWebsocket():
         return self.data['margin'][0]
 
     def market_depth(self, symbol):
-        raise NotImplementedError('orderBook is not subscribed; use askPrice and bidPrice on instrument')
-        # return self.data['orderBook25'][0]
+        # raise NotImplementedError('orderBook is not subscribed; use askPrice and bidPrice on instrument')
+        return self.data['orderBook25'][0]
 
     def open_orders(self, clOrdIDPrefix):
         orders = self.data['order']
