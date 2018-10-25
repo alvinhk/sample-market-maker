@@ -15,7 +15,7 @@ from market_maker.utils import log, constants, errors, math
 # Used for reloading the bot - saves modified times of key files
 import os
 watched_files_mtimes = [(f, getmtime(f)) for f in settings.WATCHED_FILES]
-
+from opentsdb import TSDBClient
 
 #
 # Helpers
@@ -212,6 +212,7 @@ class MarketDataCollector:
         logger.info("init MarketDataCollector")
         self.exchange = ExchangeInterface(settings.DRY_RUN)
         self.instrument = self.exchange.get_instrument()
+        self.db = TSDBClient('http://127.0.0.1:4242/')
 
     def start_collect(self):
         logger.info("startCollect")

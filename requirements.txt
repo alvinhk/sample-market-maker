@@ -6,3 +6,6 @@ pyparsing==2.2.0
 requests==2.13.0
 six==1.10.0
 websocket-client==0.53.0
+opentsdb-py==0.5.3
+python-dateutil==2.7.3
+pytz==2018.6

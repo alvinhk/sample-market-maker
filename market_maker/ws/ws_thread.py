@@ -7,6 +7,10 @@ from time import sleep
 import json
 import decimal
 import logging
+
+from opentsdb import TSDBClient
+
+from market_maker.database_adaptor import DatabaseAdaptor
 from market_maker.settings import settings
 from market_maker.auth.APIKeyAuth import generate_expires, generate_signature
 from market_maker.utils.log import setup_custom_logger
@@ -32,6 +36,7 @@ class BitMEXWebsocket():
 
     def __init__(self):
         self.logger = logging.getLogger('root')
+
         self.__reset()
 
     def __del__(self):
@@ -249,13 +254,14 @@ class BitMEXWebsocket():
                 if action == 'partial':
                     self.logger.debug("%s: partial" % table)
                     self.data[table] += message['data']
+                    DatabaseAdaptor.add(table, message['data'])
                     # Keys are communicated on partials to let you know how to uniquely identify
                     # an item. We use it for updates.
                     self.keys[table] = message['keys']
                 elif action == 'insert':
                     self.logger.debug('%s: inserting %s' % (table, message['data']))
                     self.data[table] += message['data']
-
+                    DatabaseAdaptor.add(table, message['data'])
                     # Limit the max length of the table to avoid excessive memory usage.
                     # Don't trim orders because we'll lose valuable state if we do.
                     if table not in ['order', 'orderBookL2'] and len(self.data[table]) > BitMEXWebsocket.MAX_TABLE_LEN:
